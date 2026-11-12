@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# fichiers privés (CV, lettres de motivation) — jamais versionnés
+/storage/

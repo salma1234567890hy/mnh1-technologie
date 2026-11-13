@@ -14,6 +14,7 @@ import { z } from "zod";
 import { trackingSchema } from "@/lib/validations/analytics";
 import { shouldTrack, trackPageView } from "@/lib/db/analytics";
 import { getClientIp, rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { getContentType, isDeclaredBodyTooLarge, isOriginAllowed, readBodyWithLimit } from "@/lib/api/request-guards";
 
 const MAX_BODY_BYTES = 4096;
 
@@ -34,41 +35,6 @@ function noContent() {
   return new NextResponse(null, { status: 204, headers: NO_STORE });
 }
 
-/** L'en-tête Origin, s'il est présent, doit désigner le même hôte que la requête. */
-function isOriginAllowed(request: NextRequest): boolean {
-  const origin = request.headers.get("origin");
-  if (origin === null) return true; // requêtes sans Origin (ex. certains envois même origine)
-  const host = request.headers.get("host");
-  if (!host) return false;
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false; // "null" ou Origin mal formée
-  }
-}
-
-/**
- * Lit le corps en texte en s'arrêtant dès qu'il dépasse maxBytes (Content-Length peut manquer ou mentir).
- * Renvoie null si le corps est trop volumineux.
- */
-async function readBodyWithLimit(request: NextRequest, maxBytes: number): Promise<string | null> {
-  if (!request.body) return "";
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > maxBytes) {
-      await reader.cancel().catch(() => {});
-      return null;
-    }
-    chunks.push(value);
-  }
-  return new TextDecoder().decode(Buffer.concat(chunks));
-}
-
 /**
  * GET explicite : 405 avec Allow et Cache-Control: no-store (la réponse 405 automatique de Next n'a ni l'un ni l'autre).
  * `await connection()` : jamais prérendu par cacheComponents.
@@ -86,8 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // b) Taille annoncée, puis taille réelle
-    const declaredLength = Number(request.headers.get("content-length"));
-    if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
+    if (isDeclaredBodyTooLarge(request, MAX_BODY_BYTES)) {
       return json(413, { error: "Requête trop volumineuse." });
     }
     const text = await readBodyWithLimit(request, MAX_BODY_BYTES);
@@ -96,8 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // c) Type de contenu, puis JSON
-    const contentType = (request.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-    if (!ACCEPTED_CONTENT_TYPES.includes(contentType)) {
+    if (!ACCEPTED_CONTENT_TYPES.includes(getContentType(request))) {
       return json(415, { error: "Type de contenu non pris en charge." });
     }
     let body: unknown;

@@ -5,6 +5,7 @@
 //   - admin_session : last_activity_at, revoked_at
 // Requêtes SQL paramétrées uniquement ($1, $2…) — aucune concaténation de valeurs.
 
+import type { PoolClient } from "pg";
 import { query } from "@/lib/db";
 
 /** Nombre d'échecs consécutifs avant verrouillage, et durée du verrouillage (RG27). */
@@ -185,16 +186,68 @@ export async function revokeSession(tokenHash: string): Promise<number | null> {
   return rows[0]?.admin_user_id ?? null;
 }
 
-/** Ajoute une ligne au journal d'audit (ex. LOGIN, LOGOUT). */
+/**
+ * Détails structurés d'une action (colonne admin_audit_log.metadata, migration 009).
+ * RÈGLE : JAMAIS de donnée personnelle (nom, email, téléphone, nom de fichier) —
+ * uniquement des statuts, identifiants et codes. Contrôlé par assertSafeAuditMetadata.
+ */
+export type AuditMetadata = Record<string, string | number | boolean | null>;
+
+/** Textes acceptés dans metadata : codes en MAJUSCULES (ex. "EN_ATTENTE", "CV"), 64 caractères maximum. */
+const AUDIT_CODE_PATTERN = /^[A-Z0-9_]{1,64}$/;
+const AUDIT_KEY_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]{0,31}$/;
+
+/**
+ * Refuse toute metadata qui pourrait contenir une donnée personnelle : clés simples,
+ * valeurs limitées aux nombres, booléens, null et codes en majuscules (un email, un nom
+ * ou un nom de fichier ne passent pas). Lève une erreur : c'est une erreur de programmation.
+ */
+function assertSafeAuditMetadata(metadata: AuditMetadata): void {
+  const entries = Object.entries(metadata);
+  if (entries.length > 20) throw new Error("metadata d'audit trop volumineuse");
+  for (const [key, value] of entries) {
+    if (!AUDIT_KEY_PATTERN.test(key)) throw new Error("Clé de metadata d'audit invalide");
+    const ok =
+      value === null ||
+      typeof value === "boolean" ||
+      (typeof value === "number" && Number.isFinite(value)) ||
+      (typeof value === "string" && AUDIT_CODE_PATTERN.test(value));
+    if (!ok) throw new Error("Valeur de metadata d'audit refusée (codes, statuts et identifiants uniquement)");
+  }
+}
+
+export type LogAdminActionOptions = {
+  /** Client d'une transaction en cours (withTransaction) : l'écriture est annulée avec elle. */
+  client?: PoolClient;
+  /** Détails sans donnée personnelle, ex. { from: "EN_ATTENTE", to: "ACCEPTEE" }. */
+  metadata?: AuditMetadata;
+};
+
+/**
+ * Ajoute une ligne au journal d'audit (ex. LOGIN, LOGOUT, UPDATE_APPLICATION_STATUS).
+ * Sans options.client : requête autonome sur le Pool.
+ */
 export async function logAdminAction(
   adminId: number,
   action: AdminAction,
   entityType?: string,
-  entityId?: number
+  entityId?: number,
+  options: LogAdminActionOptions = {}
 ): Promise<void> {
-  await query(
-    `INSERT INTO admin_audit_log (admin_user_id, action, entity_type, entity_id)
-     VALUES ($1, $2, $3, $4)`,
-    [adminId, action, entityType ?? null, entityId ?? null]
-  );
+  if (options.metadata) assertSafeAuditMetadata(options.metadata);
+
+  const text = `INSERT INTO admin_audit_log (admin_user_id, action, entity_type, entity_id, metadata)
+     VALUES ($1, $2, $3, $4, $5::jsonb)`;
+  const params = [
+    adminId,
+    action,
+    entityType ?? null,
+    entityId ?? null,
+    options.metadata ? JSON.stringify(options.metadata) : null,
+  ];
+  if (options.client) {
+    await options.client.query(text, params);
+  } else {
+    await query(text, params);
+  }
 }

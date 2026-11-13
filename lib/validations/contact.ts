@@ -40,6 +40,10 @@ export const contactSchema = z.strictObject({
   // Champ piège anti-spam : invisible pour les humains, doit rester vide.
   // Il est accepté par le schéma, puis contrôlé par la route.
   website: z.string().max(200).optional(),
+}, {
+  // Erreurs au niveau du formulaire : champ inconnu, ou corps qui n'est pas un objet.
+  error: (issue) =>
+    issue.code === "unrecognized_keys" ? "Champ non autorisé." : "Données du formulaire invalides.",
 });
 
 export type ContactInput = z.infer<typeof contactSchema>;

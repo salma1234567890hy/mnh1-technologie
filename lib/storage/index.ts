@@ -6,7 +6,7 @@
 
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 /** Taille maximale d'un fichier : 5 Mo (aligné sur la contrainte application_cv_size_chk). */
@@ -90,6 +90,57 @@ export async function savePrivateFile(file: File, folder: StorageFolder): Promis
   await writeFile(fullPath, new Uint8Array(await file.arrayBuffer()), { flag: "wx" });
 
   return key;
+}
+
+/** Motif de refus d'une lecture : code technique, jamais de chemin ni de nom de fichier. */
+export type PrivateFileFailure = "INVALID_KEY" | "FILE_MISSING" | "NOT_A_FILE" | "FILE_TOO_LARGE" | "INVALID_SIGNATURE";
+
+export type PrivateFileReadResult =
+  | { ok: true; data: Uint8Array; sizeBytes: number }
+  | { ok: false; reason: PrivateFileFailure };
+
+/**
+ * Lit un fichier privé pour le servir au téléchargement (routes Admin uniquement).
+ * - n'accepte QUE le format de clé généré par savePrivateFile ("<dossier>/<uuid v4>.pdf"),
+ *   et, si expectedFolder est fourni, uniquement dans ce dossier ;
+ * - vérifie que le chemin résolu reste à l'intérieur de PRIVATE_STORAGE_DIR (protection contre "../") ;
+ * - refuse un lien symbolique, un dossier ou un fichier de plus de 5 Mo ;
+ * - revérifie la signature "%PDF-" avant de renvoyer le contenu.
+ * Renvoie { ok: false, reason: "FILE_MISSING" } si le fichier n'existe pas sur le disque.
+ */
+export async function readPrivateFile(key: string, expectedFolder?: StorageFolder): Promise<PrivateFileReadResult> {
+  if (typeof key !== "string" || !STORAGE_KEY_PATTERN.test(key)) return { ok: false, reason: "INVALID_KEY" };
+  if (expectedFolder && !key.startsWith(`${expectedFolder}/`)) return { ok: false, reason: "INVALID_KEY" };
+
+  let fullPath: string;
+  try {
+    fullPath = resolveStorageKey(key);
+  } catch {
+    return { ok: false, reason: "INVALID_KEY" };
+  }
+
+  let stats;
+  try {
+    stats = await lstat(fullPath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return { ok: false, reason: "FILE_MISSING" };
+    throw error;
+  }
+  if (!stats.isFile()) return { ok: false, reason: "NOT_A_FILE" }; // dossier ou lien symbolique
+  if (stats.size > MAX_FILE_SIZE) return { ok: false, reason: "FILE_TOO_LARGE" };
+
+  let data: Buffer;
+  try {
+    data = await readFile(fullPath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return { ok: false, reason: "FILE_MISSING" };
+    throw error;
+  }
+
+  const isPdf = data.length >= PDF_SIGNATURE.length && PDF_SIGNATURE.every((byte, i) => data[i] === byte);
+  if (!isPdf) return { ok: false, reason: "INVALID_SIGNATURE" };
+
+  return { ok: true, data: new Uint8Array(data), sizeBytes: data.length };
 }
 
 /** Supprime un fichier privé. Ne lève pas d'erreur si le fichier n'existe pas. */

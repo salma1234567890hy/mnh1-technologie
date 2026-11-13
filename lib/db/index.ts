@@ -1,5 +1,5 @@
 import "server-only";
-import { Pool, type QueryResultRow } from "pg";
+import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
 declare global {
   var __mnhPool: Pool | undefined;
@@ -28,4 +28,24 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   params: unknown[] = []
 ) {
   return pool.query<T>(text, params);
+}
+
+/**
+ * Exécute fn dans une transaction (BEGIN / COMMIT, ROLLBACK en cas d'erreur).
+ * Toutes les requêtes de fn doivent passer par le client fourni : client.query<T>(text, params).
+ * La connexion est toujours rendue au Pool, même en cas d'erreur.
+ */
+export async function withTransaction<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
 }

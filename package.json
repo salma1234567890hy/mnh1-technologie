@@ -11,7 +11,8 @@
     "test:applications": "node --env-file=.env.local scripts/test-applications-api.mjs",
     "admin:create": "node --env-file=.env.local scripts/create-admin.mjs",
     "admin:reset-password": "node --env-file=.env.local scripts/reset-admin-password.mjs",
-    "test:admin": "node --env-file=.env.local scripts/test-admin-auth.mjs"
+    "test:admin": "node --env-file=.env.local scripts/test-admin-auth.mjs",
+    "test:dashboard": "node --env-file=.env.local scripts/test-dashboard-api.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

@@ -1,7 +1,7 @@
 // lib/db/jobOffers.ts
 // Accès aux données : offres d'emploi publiques (table job_offer).
 // Seules les offres « ouvertes » sont renvoyées (RG14) : status = 'PUBLIEE'
-// ET (closing_date IS NULL OR closing_date >= CURRENT_DATE).
+// ET (closing_date IS NULL OR closing_date >= date du jour au Maroc).
 // Les offres BROUILLON, DESACTIVEE, ARCHIVEE ou échues ne sortent jamais d'ici.
 // Requêtes SQL paramétrées uniquement ($1, $2…) — aucune concaténation de valeurs.
 
@@ -29,9 +29,26 @@ export type JobOfferDetail = JobOfferSummary & {
   updated_at: Date;
 };
 
-/** Condition RG14, partagée par toutes les requêtes publiques. */
-const OPEN_OFFER_CONDITION = `status = 'PUBLIEE'
-  AND (closing_date IS NULL OR closing_date >= CURRENT_DATE)`;
+/** Alias de table SQL autorisés pour job_offer (constantes du code, jamais une valeur reçue). */
+export type JobOfferAlias = "jo";
+
+/**
+ * Condition RG14 (offre « ouverte »), source unique pour toutes les requêtes.
+ * « Aujourd'hui » est la date du Maroc, écrite explicitement : elle ne dépend pas du fuseau de la base.
+ * @param alias alias de job_offer dans la requête appelante (ex. "jo" → "jo.status"), ou aucun.
+ *              Limité par le type à des constantes du code et revérifié ici : rien de l'utilisateur n'est inséré.
+ */
+export function openOfferCondition(alias?: JobOfferAlias): string {
+  if (alias !== undefined && !/^[a-z_]+$/.test(alias)) {
+    throw new Error("Alias SQL invalide");
+  }
+  const p = alias ? `${alias}.` : "";
+  return `${p}status = 'PUBLIEE'
+  AND (${p}closing_date IS NULL OR ${p}closing_date >= (now() AT TIME ZONE 'Africa/Casablanca')::date)`;
+}
+
+/** Condition RG14 sans alias, partagée par les requêtes publiques et par les statistiques du dashboard. */
+export const OPEN_OFFER_CONDITION = openOfferCondition();
 
 const SUMMARY_COLUMNS = `id, slug, title, contract_type, location, published_at,
   closing_date::text AS closing_date`;

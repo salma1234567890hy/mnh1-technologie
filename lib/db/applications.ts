@@ -3,7 +3,11 @@
 // Requête SQL paramétrée uniquement ($1, $2…) — aucune concaténation de valeurs.
 
 import { query } from "@/lib/db";
+import { openOfferCondition } from "@/lib/db/jobOffers";
 import type { ApplicationInput } from "@/lib/validations/application";
+
+/** Condition RG14 (même source que les pages publiques), avec l'alias jo de la requête ci-dessous. */
+const OPEN_OFFER_CONDITION_JO = openOfferCondition("jo");
 
 /** Lettre de motivation : la clé et le nom d'origine sont fournis ensemble, ou pas du tout. */
 type CoverLetterFields =
@@ -40,8 +44,7 @@ export async function createApplication(input: NewApplication): Promise<number |
        $10::text, true
      FROM job_offer jo
      WHERE jo.id = $1
-       AND jo.status = 'PUBLIEE'
-       AND (jo.closing_date IS NULL OR jo.closing_date >= CURRENT_DATE)
+       AND ${OPEN_OFFER_CONDITION_JO}
      RETURNING id`,
     [
       input.job_offer_id,

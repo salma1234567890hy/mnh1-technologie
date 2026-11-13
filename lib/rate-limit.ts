@@ -5,6 +5,20 @@
 
 type Bucket = { count: number; resetAt: number };
 
+export type RateLimitConfig = { limit: number; windowMs: number };
+
+const isDevelopment = process.env.NODE_ENV === "development";
+
+/**
+ * Configurations partagées.
+ * Uniquement sous `npm run dev` (NODE_ENV = "development"), les limites sont relevées pour les tests manuels ;
+ * `next build` et `next start` utilisent toujours NODE_ENV = "production" : la limite de production s'applique alors.
+ */
+export const RATE_LIMITS = {
+  /** Suivi des visites (POST /api/analytics/track) : 60 requêtes / minute / adresse IP (300 en développement). */
+  analytics: { limit: isDevelopment ? 300 : 60, windowMs: 60 * 1000 },
+} as const satisfies Record<string, RateLimitConfig>;
+
 const buckets = new Map<string, Bucket>();
 let lastCleanup = Date.now();
 

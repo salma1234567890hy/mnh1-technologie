@@ -13,6 +13,7 @@
 import "server-only";
 import { connection, type NextRequest } from "next/server";
 import { z } from "zod";
+import { getContentType, isDeclaredBodyTooLarge, readBodyWithLimit } from "@/lib/api/request-guards";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import type { AdminIdentity } from "@/lib/db/admin";
 
@@ -38,6 +39,38 @@ const json = adminJson;
 export function withAdminCacheHeader(response: Response): Response {
   response.headers.set("Cache-Control", ADMIN_CACHE_CONTROL);
   return response;
+}
+
+/**
+ * Lecture du corps JSON d'une écriture Admin, dans cet ordre :
+ * Content-Type application/json (sinon 415) → taille annoncée puis lecture plafonnée (sinon 413)
+ * → JSON valide (sinon 400 « Requête invalide. »). Le contrôle d'Origin reste à la charge de la route.
+ */
+export async function readAdminJsonBody(
+  request: Request,
+  maxBytes: number
+): Promise<{ ok: true; body: unknown } | { ok: false; response: Response }> {
+  if (getContentType(request) !== "application/json") {
+    return { ok: false, response: json(415, { error: "Type de contenu non pris en charge." }) };
+  }
+  if (isDeclaredBodyTooLarge(request, maxBytes)) {
+    return { ok: false, response: json(413, { error: "Requête trop volumineuse." }) };
+  }
+  const text = await readBodyWithLimit(request, maxBytes);
+  if (text === null) {
+    return { ok: false, response: json(413, { error: "Requête trop volumineuse." }) };
+  }
+  try {
+    return { ok: true, body: JSON.parse(text) };
+  } catch {
+    return { ok: false, response: json(400, { error: "Requête invalide." }) };
+  }
+}
+
+/** 400 « Données invalides. » avec details { formErrors, fieldErrors } (validation d'un corps). */
+export function adminInvalidBody(error: z.ZodError): Response {
+  const { formErrors, fieldErrors } = z.flattenError(error);
+  return json(400, { error: "Données invalides.", details: { formErrors, fieldErrors } });
 }
 
 /** Message et journal communs aux erreurs inattendues : nom de l'erreur et code SQL uniquement. */

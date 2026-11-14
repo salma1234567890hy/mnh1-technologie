@@ -55,10 +55,48 @@ const SUMMARY_COLUMNS = `id, slug, title, contract_type, location, published_at,
 
 const DETAIL_COLUMNS = `${SUMMARY_COLUMNS}, description, missions, required_skills, updated_at`;
 
-/** Offres ouvertes, de la plus récente à la plus ancienne. */
-export async function listOpenJobOffers(): Promise<JobOfferSummary[]> {
-  const { rows } = await query<JobOfferSummary>(
-    `SELECT ${SUMMARY_COLUMNS}
+/**
+ * Offre telle qu'exposée par les routes PUBLIQUES (/api/job-offers et /api/job-offers/[slug]).
+ * Liste des champs publics définie à CE SEUL endroit : jamais le statut interne, created_by,
+ * les dates internes de création / modification, le nombre de candidatures ni aucune donnée Admin.
+ */
+export type PublicJobOffer = {
+  id: number;
+  slug: string;
+  title: string;
+  description: string;
+  location: string;
+  contractType: ContractType;
+  missions: string[];
+  requiredSkills: string[];
+  publishedAt: Date;
+  /** AAAA-MM-JJ (date de clôture, heure du Maroc), ou null si l'offre n'a pas de date limite. */
+  closingDate: string | null;
+};
+
+/** Mise en forme publique : sélection EXPLICITE des champs (tout autre champ est écarté). */
+export function toPublicJobOffer(offer: JobOfferDetail): PublicJobOffer {
+  return {
+    id: offer.id,
+    slug: offer.slug,
+    title: offer.title,
+    description: offer.description,
+    location: offer.location,
+    contractType: offer.contract_type,
+    missions: offer.missions,
+    requiredSkills: offer.required_skills,
+    publishedAt: offer.published_at,
+    closingDate: offer.closing_date,
+  };
+}
+
+/**
+ * Offres ouvertes (RG14), de la plus récente à la plus ancienne (date de publication décroissante).
+ * Colonnes du détail : la liste publique expose les mêmes champs que le détail (voir PublicJobOffer).
+ */
+export async function listOpenJobOffers(): Promise<JobOfferDetail[]> {
+  const { rows } = await query<JobOfferDetail>(
+    `SELECT ${DETAIL_COLUMNS}
      FROM job_offer
      WHERE ${OPEN_OFFER_CONDITION}
      ORDER BY published_at DESC, id DESC`

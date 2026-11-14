@@ -17,6 +17,8 @@ const isDevelopment = process.env.NODE_ENV === "development";
 export const RATE_LIMITS = {
   /** Suivi des visites (POST /api/analytics/track) : 60 requêtes / minute / adresse IP (300 en développement). */
   analytics: { limit: isDevelopment ? 300 : 60, windowMs: 60 * 1000 },
+  /** Lecture publique des offres (GET /api/job-offers, /api/job-offers/[slug]) : 120 / minute / IP (600 en développement). */
+  publicRead: { limit: isDevelopment ? 600 : 120, windowMs: 60 * 1000 },
 } as const satisfies Record<string, RateLimitConfig>;
 
 const buckets = new Map<string, Bucket>();

@@ -191,9 +191,12 @@ export async function revokeSession(tokenHash: string): Promise<number | null> {
  * RÈGLE : JAMAIS de donnée personnelle (nom, email, téléphone, nom de fichier) —
  * uniquement des statuts, identifiants et codes. Contrôlé par assertSafeAuditMetadata.
  */
-export type AuditMetadata = Record<string, string | number | boolean | null>;
+export type AuditMetadata = Record<string, string | number | boolean | null | readonly string[]>;
 
-/** Textes acceptés dans metadata : codes en MAJUSCULES (ex. "EN_ATTENTE", "CV"), 64 caractères maximum. */
+/**
+ * Textes acceptés dans metadata : codes en MAJUSCULES (ex. "EN_ATTENTE", "CV"), 64 caractères maximum,
+ * seuls ou en liste (ex. fields: ["TITLE", "LOCATION"]).
+ */
 const AUDIT_CODE_PATTERN = /^[A-Z0-9_]{1,64}$/;
 const AUDIT_KEY_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]{0,31}$/;
 
@@ -211,7 +214,11 @@ function assertSafeAuditMetadata(metadata: AuditMetadata): void {
       value === null ||
       typeof value === "boolean" ||
       (typeof value === "number" && Number.isFinite(value)) ||
-      (typeof value === "string" && AUDIT_CODE_PATTERN.test(value));
+      (typeof value === "string" && AUDIT_CODE_PATTERN.test(value)) ||
+      // Liste de codes (ex. fields: ["TITLE", "LOCATION"]) : mêmes règles, 20 éléments au maximum.
+      (Array.isArray(value) &&
+        value.length <= 20 &&
+        value.every((item) => typeof item === "string" && AUDIT_CODE_PATTERN.test(item)));
     if (!ok) throw new Error("Valeur de metadata d'audit refusée (codes, statuts et identifiants uniquement)");
   }
 }

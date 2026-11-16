@@ -113,6 +113,26 @@ const fr = {
     scrollLabel: "Faire défiler vers la section suivante",
   },
 
+  /** Home page sections after the Hero (docs/design-spec.md › Sections 3–10). */
+  home: {
+    services: {
+      label: "Nos services",
+      title: "Produit, croissance et IA réunis pour faire avancer votre business.",
+      /** The one coloured word of the title (must appear in it). */
+      highlight: "IA",
+      cta: "Tous nos services",
+      learnMore: "En savoir plus",
+      /** Accessible name of each card link (contains the visible text). */
+      learnMoreLabel: "En savoir plus : {name}",
+    },
+    finalCta: {
+      // Non-breaking spaces before « ? » and « ! » (French typography).
+      title: "Vous avez un projet en tête\u00a0? Travaillons ensemble\u00a0!",
+      highlight: "ensemble",
+      button: "Parlons de votre projet",
+    },
+  },
+
   footer: {
     columns: { studio: "Studio", startProject: "Démarrer un projet", explore: "Explorer", sayHello: "Écrivez-nous" },
     status: { open: "Ouvert : nous sommes au travail.", closed: "Fermé : nous vous répondons le prochain jour ouvré." },

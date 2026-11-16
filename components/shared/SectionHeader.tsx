@@ -4,35 +4,40 @@ import { cn } from "@/lib/utils";
 type Tone = "dark" | "light";
 
 type SectionHeaderProps = {
-  /** Small uppercase label above the title (e.g. « POURQUOI NOUS »). */
+  /** Small uppercase label above the title (e.g. « Nos services »). */
   label: string;
   /** Full H2 text. */
   title: string;
-  /** The ONE word (or short phrase) of `title` shown in green — first occurrence only. */
+  /** The ONE word (or short phrase) of `title` shown in colour — first occurrence only. */
   highlight?: string;
   /** Optional paragraph under the title. */
   description?: ReactNode;
-  /** Background the header sits on: picks a green and greys with AA contrast. */
+  /** Background the header sits on: picks greens and greys with AA contrast. */
   tone: Tone;
   align?: "left" | "center";
+  /** Optional button or link: on the right on desktop (lg), below the title on mobile. */
+  action?: ReactNode;
   /** id of the H2, to use with aria-labelledby on the parent <section>. */
   id?: string;
   className?: string;
 };
 
 /*
- * Contrast rule (CLAUDE.md): green TEXT is mnh-brand (#67B02E) on dark backgrounds
- * and mnh-brand-text (#3F7A1C) on light ones. The label's decorative line keeps
- * the official green in both tones (non-text element).
+ * Colours (CLAUDE.md › contrast rule, FE-03 decisions):
+ * - dark background:  label #67B02E (mnh-brand) · coloured word #4ADE80 (mnh-accent, like the Hero H1)
+ * - light background: label AND coloured word #3F7A1C (mnh-brand-text) — #67B02E is never text on light.
+ * The label's decorative line keeps the official green #67B02E in both tones (non-text element).
  */
-const toneClasses: Record<Tone, { green: string; title: string; description: string }> = {
+const toneClasses: Record<Tone, { label: string; highlight: string; title: string; description: string }> = {
   dark: {
-    green: "text-mnh-brand",
+    label: "text-mnh-brand",
+    highlight: "text-mnh-accent",
     title: "text-mnh-text-white",
     description: "text-mnh-text-muted-dark",
   },
   light: {
-    green: "text-mnh-brand-text",
+    label: "text-mnh-brand-text",
+    highlight: "text-mnh-brand-text",
     title: "text-mnh-text-dark",
     description: "text-mnh-text-muted-light",
   },
@@ -46,19 +51,20 @@ export function SectionHeader({
   description,
   tone,
   align = "left",
+  action,
   id,
   className,
 }: SectionHeaderProps) {
   const colors = toneClasses[tone];
   const centered = align === "center";
 
-  return (
-    <div className={cn(centered && "mx-auto text-center", className)}>
+  const heading = (
+    <div className={cn(centered && "mx-auto text-center")}>
       <p
         className={cn(
           "mb-4 flex items-center gap-3 font-sans text-xs leading-[1.4] font-semibold tracking-[0.08em] uppercase lg:text-sm",
           centered && "justify-center",
-          colors.green,
+          colors.label,
         )}
       >
         <span aria-hidden="true" className="h-0.5 w-8 shrink-0 bg-mnh-brand" />
@@ -72,7 +78,7 @@ export function SectionHeader({
           colors.title,
         )}
       >
-        <HighlightedTitle title={title} highlight={highlight} className={colors.green} />
+        <HighlightedText text={title} highlight={highlight} className={colors.highlight} />
       </h2>
       {description && (
         <p
@@ -87,17 +93,27 @@ export function SectionHeader({
       )}
     </div>
   );
+
+  if (!action) return <div className={className}>{heading}</div>;
+
+  return (
+    <div className={cn("flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between", className)}>
+      {heading}
+      <div className="shrink-0">{action}</div>
+    </div>
+  );
 }
 
-function HighlightedTitle({ title, highlight, className }: { title: string; highlight?: string; className: string }) {
-  const index = highlight ? title.indexOf(highlight) : -1;
-  if (!highlight || index === -1) return title;
+/** `text` with the first occurrence of `highlight` wrapped in a coloured span (one accent per title). */
+export function HighlightedText({ text, highlight, className }: { text: string; highlight?: string; className: string }) {
+  const index = highlight ? text.indexOf(highlight) : -1;
+  if (!highlight || index === -1) return text;
 
   return (
     <>
-      {title.slice(0, index)}
+      {text.slice(0, index)}
       <span className={className}>{highlight}</span>
-      {title.slice(index + highlight.length)}
+      {text.slice(index + highlight.length)}
     </>
   );
 }

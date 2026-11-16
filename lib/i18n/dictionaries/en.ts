@@ -106,6 +106,22 @@ const en: Dictionary = {
     scrollLabel: "Scroll to the next section",
   },
 
+  home: {
+    services: {
+      label: "Our services",
+      title: "Product, growth and AI combined to move your business forward.",
+      highlight: "AI",
+      cta: "All services",
+      learnMore: "Learn more",
+      learnMoreLabel: "Learn more: {name}",
+    },
+    finalCta: {
+      title: "Have a project in mind? Let's work together!",
+      highlight: "together",
+      button: "Let's talk about your project",
+    },
+  },
+
   footer: {
     columns: { studio: "Studio", startProject: "Start a project", explore: "Explore", sayHello: "Say hello" },
     status: { open: "Open now: we're building.", closed: "Closed: we'll reply next business day." },

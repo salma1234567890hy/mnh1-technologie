@@ -1,14 +1,4 @@
-import {
-  Brain,
-  Code2,
-  FileText,
-  FolderKanban,
-  Megaphone,
-  MessageSquare,
-  Smartphone,
-  UserRound,
-  type LucideIcon,
-} from "lucide-react";
+import { FileText, FolderKanban, MessageSquare, UserRound } from "lucide-react";
 import { getPageStatus, headerCta, mainNavigation } from "@/components/layout/navigation";
 import { localizedHref, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries/fr";
@@ -24,22 +14,18 @@ import type { SearchIndex, SearchItem } from "@/lib/search/types";
  * they show the public 404 until those pages exist.
  */
 
-/** Search-only metadata per service. */
-const serviceSearchMeta: Record<ServiceSlug, { icon: LucideIcon; keywords: string[] }> = {
+/** Search-only keywords per service (icons: lib/content/services.ts). */
+const serviceSearchMeta: Record<ServiceSlug, { keywords: string[] }> = {
   "web-development": {
-    icon: Code2,
     keywords: ["web", "site", "site web", "website", "développement", "development", "web development", "plateforme", "platform", "seo", "frontend", "backend"],
   },
   "mobile-apps": {
-    icon: Smartphone,
     keywords: ["mobile", "app", "application", "apps", "mobile apps", "ios", "android", "smartphone"],
   },
   "artificial-intelligence": {
-    icon: Brain,
     keywords: ["ia", "ai", "intelligence artificielle", "artificial intelligence", "automatisation", "automation", "machine learning", "data", "chatbot"],
   },
   "digital-marketing": {
-    icon: Megaphone,
     keywords: ["marketing", "digital marketing", "marketing digital", "acquisition", "seo", "ads", "publicité", "advertising", "réseaux sociaux", "social media", "growth"],
   },
 };
@@ -100,7 +86,7 @@ export function createSearchIndex(dict: Dictionary, locale: Locale): SearchIndex
     status: getPageStatus(service.href),
     category: "Services",
     keywords: serviceSearchMeta[service.slug].keywords,
-    icon: serviceSearchMeta[service.slug].icon,
+    icon: service.icon,
   }));
 
   const projectItems: SearchItem[] = projects.map((project) => ({

@@ -27,6 +27,7 @@ Toujours la lire avant de créer ou modifier un composant visuel.
 10. Toute page Admin doit appeler `requireAdminPage()` (`lib/admin/require-admin-page.ts`) elle-même, sous `<Suspense>` (le layout seul ne suffit pas). Les routes `/api/admin/*` gardent `requireAdmin()`.
 11. Code client : `lib/client/` et `lib/types/` ; jamais d'import d'un module `server-only`, sauf `import type`.
 12. **Aucun texte visible en dur dans les composants du site public** : tout passe par les dictionnaires `lib/i18n/dictionaries/fr.ts` (référence, le type `Dictionary` en est dérivé) et `en.ts`. Server Components : `getDictionary()` (`lib/i18n/get-dictionary.ts`) ; Client Components : `useI18n()` (`components/i18n/I18nProvider.tsx`). Liens internes : toujours `localizedHref(locale, href)` (`lib/i18n/config.ts`). L'Admin reste en français (non traduit).
+13. **Git** : tout le travail Frontend se fait sur la branche `frontend`. Ne jamais pousser sur `main` sans mon accord ; `main` ne reçoit le Frontend que par une fusion validée.
 
 ## Design tokens (résumé — détail dans docs/design-spec.md)
 

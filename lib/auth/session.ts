@@ -7,6 +7,7 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import {
   createSession,
   findValidSession,
@@ -97,6 +98,17 @@ export async function getAdminFromRequest(): Promise<AdminIdentity | null> {
   await touchSession(result.session.id);
   return result.admin;
 }
+
+/**
+ * Admin connecté, pour les Server Components (layouts et pages /admin) — ou null.
+ * Même et unique logique de validation que getAdminFromRequest (cookie, session existante,
+ * non révoquée, non expirée, inactivité, compte actif) : c'est elle qui est appelée.
+ * cache() de React : une seule lecture (et un seul touchSession) par rendu, même si plusieurs
+ * composants l'appellent. Volontairement SANS 'use cache: private' : une session révoquée
+ * doit être refusée immédiatement, jamais servie depuis un cache.
+ * Lit cookies() : à appeler sous une frontière <Suspense> (cacheComponents).
+ */
+export const getCurrentAdmin = cache(getAdminFromRequest);
 
 /**
  * Révoque la session correspondant au jeton (déconnexion).

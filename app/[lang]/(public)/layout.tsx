@@ -1,12 +1,15 @@
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SkipLink } from "@/components/shared/SkipLink";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 
 /** Public site shell: skip link, floating navbar, main content, footer. */
-export default function PublicLayout({ children }: LayoutProps<"/">) {
+export default async function PublicLayout({ children }: LayoutProps<"/[lang]">) {
+  const { dict } = await getDictionary();
+
   return (
     <>
-      <SkipLink />
+      <SkipLink label={dict.common.skipLink} />
       <SiteHeader />
       {/*
         Offsets content below the floating navbar.

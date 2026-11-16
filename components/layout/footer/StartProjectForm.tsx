@@ -7,9 +7,13 @@ import { cn } from "@/lib/utils";
 import { isValidEmail, savePrefillEmail } from "@/lib/contact/prefill";
 
 type StartProjectFormProps = {
+  /** Visually hidden label of the email field. */
+  emailLabel: string;
   placeholder: string;
+  /** Accessible name of the arrow button. */
+  submitLabel: string;
   errorMessage: string;
-  /** Page that reads the email with consumePrefillEmail(). */
+  /** Localized page that reads the email with consumePrefillEmail(). */
   destination: string;
 };
 
@@ -17,7 +21,7 @@ type StartProjectFormProps = {
  * Email capture → hands the email to /contact through sessionStorage (never the URL).
  * Nothing is "sent" here: no fake success message.
  */
-export function StartProjectForm({ placeholder, errorMessage, destination }: StartProjectFormProps) {
+export function StartProjectForm({ emailLabel, placeholder, submitLabel, errorMessage, destination }: StartProjectFormProps) {
   const router = useRouter();
   const inputId = useId();
   const errorId = `${inputId}-error`;
@@ -39,7 +43,7 @@ export function StartProjectForm({ placeholder, errorMessage, destination }: Sta
   return (
     <form noValidate onSubmit={handleSubmit} className="mt-6">
       <label htmlFor={inputId} className="sr-only">
-        Your email address
+        {emailLabel}
       </label>
       <div
         className={cn(
@@ -65,7 +69,7 @@ export function StartProjectForm({ placeholder, errorMessage, destination }: Sta
         />
         <button
           type="submit"
-          aria-label="Start a project with this email"
+          aria-label={submitLabel}
           className="group/btn inline-flex size-11 shrink-0 items-center justify-center rounded-md text-mnh-text-muted-dark transition-colors duration-200 hover:text-mnh-accent focus-visible:text-mnh-accent"
         >
           <ArrowRight

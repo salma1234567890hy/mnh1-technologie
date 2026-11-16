@@ -22,16 +22,23 @@ import {
   DialogPortal,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { prefetchFor } from "@/components/layout/navigation";
+import { localizedHref } from "@/lib/i18n/config";
+import { formatMessage } from "@/lib/i18n/format";
 import { search } from "@/lib/search/search";
-import type { SearchResult } from "@/lib/search/types";
+import type { SearchIndex, SearchResult } from "@/lib/search/types";
 
 type SearchDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   getFinalFocus: () => HTMLElement | null;
+  /** Localized index (createSearchIndex). */
+  index: SearchIndex;
 };
 
-export function SearchDialog({ open, onOpenChange, getFinalFocus }: SearchDialogProps) {
+export function SearchDialog({ open, onOpenChange, getFinalFocus, index }: SearchDialogProps) {
+  const { dict } = useI18n();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPortal>
@@ -44,17 +51,19 @@ export function SearchDialog({ open, onOpenChange, getFinalFocus }: SearchDialog
             "origin-top transition-[opacity,scale] duration-200 ease-out data-ending-style:scale-96 data-ending-style:opacity-0 data-starting-style:scale-96 data-starting-style:opacity-0 motion-reduce:transition-none",
           )}
         >
-          <DialogTitle className="sr-only">Search the site</DialogTitle>
+          <DialogTitle className="sr-only">{dict.search.title}</DialogTitle>
           {/* Remount on each open so the query and selection start fresh. */}
-          {open && <SearchCommand onNavigate={() => onOpenChange(false)} />}
+          {open && <SearchCommand index={index} onNavigate={() => onOpenChange(false)} />}
         </DialogPrimitive.Popup>
       </DialogPortal>
     </Dialog>
   );
 }
 
-function SearchCommand({ onNavigate }: { onNavigate: () => void }) {
+function SearchCommand({ index, onNavigate }: { index: SearchIndex; onNavigate: () => void }) {
   const router = useRouter();
+  const { dict, locale } = useI18n();
+  const t = dict.search;
   const baseId = useId();
   const listboxId = `${baseId}-listbox`;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -64,7 +73,7 @@ function SearchCommand({ onNavigate }: { onNavigate: () => void }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const deferredQuery = useDeferredValue(query);
 
-  const groups = useMemo(() => search(deferredQuery), [deferredQuery]);
+  const groups = useMemo(() => search(deferredQuery, index), [deferredQuery, index]);
   const flatResults = useMemo(
     () => groups.flatMap((group) => group.results),
     [groups],
@@ -110,6 +119,15 @@ function SearchCommand({ onNavigate }: { onNavigate: () => void }) {
 
   let runningIndex = -1;
 
+  // Announced to screen readers after each (deferred) query; nothing for the suggestions.
+  const resultsAnnouncement = !deferredQuery.trim()
+    ? ""
+    : flatResults.length === 0
+      ? t.resultsCount.none
+      : flatResults.length === 1
+        ? t.resultsCount.one
+        : formatMessage(t.resultsCount.other, { count: String(flatResults.length) });
+
   return (
     <>
       <div className="flex shrink-0 items-center gap-3 border-b border-mnh-dark-border px-4 sm:px-5">
@@ -119,7 +137,7 @@ function SearchCommand({ onNavigate }: { onNavigate: () => void }) {
           autoFocus
           type="text"
           role="combobox"
-          aria-label="Search pages, services, projects"
+          aria-label={t.inputLabel}
           aria-expanded="true"
           aria-controls={listboxId}
           aria-autocomplete="list"
@@ -128,7 +146,7 @@ function SearchCommand({ onNavigate }: { onNavigate: () => void }) {
           autoCorrect="off"
           spellCheck={false}
           enterKeyHint="go"
-          placeholder="Search pages, services, projects…"
+          placeholder={t.placeholder}
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -140,43 +158,48 @@ function SearchCommand({ onNavigate }: { onNavigate: () => void }) {
         <DialogClose
           className="inline-flex h-7 shrink-0 items-center rounded-md border border-mnh-dark-border px-2 font-sans text-xs text-mnh-text-muted-dark transition-colors duration-200 hover:border-mnh-accent/40 hover:text-mnh-accent"
         >
-          Esc
-          <span className="sr-only"> — close search</span>
+          {t.closeKey}
+          <span className="sr-only">{t.closeLabel}</span>
         </DialogClose>
       </div>
+
+      <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {resultsAnnouncement}
+      </p>
 
       <div
         ref={listRef}
         id={listboxId}
         role="listbox"
-        aria-label="Search results"
+        aria-label={t.resultsLabel}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 sm:max-h-[min(420px,calc(70vh-112px))]"
       >
         {flatResults.length === 0 ? (
           <div role="presentation" className="px-4 py-10 text-center">
             <p className="font-sans text-[15px] text-mnh-text-muted-dark">
-              No results for « <span className="text-mnh-text-white">{deferredQuery.trim()}</span> »
+              {t.noResults} « <span className="text-mnh-text-white">{deferredQuery.trim()}</span> »
             </p>
             <Link
-              href="/contact"
+              href={localizedHref(locale, "/contact")}
+              prefetch={prefetchFor("/contact")}
               onClick={onNavigate}
               className="mt-3 inline-flex items-center gap-2 rounded-md font-sans text-sm font-semibold text-mnh-accent transition-[gap] duration-200 hover:gap-3"
             >
-              Contact us
+              {t.contactUs}
               <ArrowRight aria-hidden="true" size={16} />
             </Link>
           </div>
         ) : (
           groups.map((group) => {
-            const headingId = `${baseId}-group-${group.label}`;
+            const headingId = `${baseId}-group-${group.id}`;
             return (
-              <div key={group.label} role="group" aria-labelledby={headingId} className="pb-2 last:pb-0">
+              <div key={group.id} role="group" aria-labelledby={headingId} className="pb-2 last:pb-0">
                 <div
                   id={headingId}
                   role="presentation"
                   className="px-3 pt-3 pb-2 font-sans text-[11px] font-semibold tracking-[0.1em] text-mnh-text-muted-dark uppercase"
                 >
-                  {group.label}
+                  {t.groups[group.id]}
                 </div>
                 {group.results.map((result) => {
                   runningIndex += 1;
@@ -216,12 +239,23 @@ function SearchCommand({ onNavigate }: { onNavigate: () => void }) {
                         >
                           <HighlightedTitle result={result} />
                         </div>
+                        {result.item.status === "planned" && (
+                          <span className="sr-only"> — {t.soon}</span>
+                        )}
                         {result.item.description && (
                           <div className="truncate font-sans text-[13px] text-mnh-text-muted-dark">
                             {result.item.description}
                           </div>
                         )}
                       </div>
+                      {result.item.status === "planned" && (
+                        <span
+                          aria-hidden="true"
+                          className="shrink-0 rounded-full border border-mnh-dark-border px-2 py-0.5 font-sans text-[11px] leading-none font-medium text-mnh-text-muted-dark"
+                        >
+                          {t.soon}
+                        </span>
+                      )}
                       <ArrowRight
                         aria-hidden="true"
                         size={16}
@@ -243,9 +277,9 @@ function SearchCommand({ onNavigate }: { onNavigate: () => void }) {
         aria-hidden="true"
         className="hidden shrink-0 items-center gap-4 border-t border-mnh-dark-border px-5 py-3 font-sans text-xs text-mnh-text-muted-dark sm:flex"
       >
-        <span><Kbd>↑</Kbd><Kbd>↓</Kbd> navigate</span>
-        <span><Kbd>↵</Kbd> open</span>
-        <span><Kbd>esc</Kbd> close</span>
+        <span><Kbd>↑</Kbd><Kbd>↓</Kbd> {t.help.navigate}</span>
+        <span><Kbd>↵</Kbd> {t.help.open}</span>
+        <span><Kbd>{t.help.escKey}</Kbd> {t.help.close}</span>
       </div>
     </>
   );

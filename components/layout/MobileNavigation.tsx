@@ -17,12 +17,15 @@ import {
 } from "@/components/ui/dialog";
 import { HeaderCta } from "@/components/layout/HeaderCta";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
-import { isActivePath, mainNavigationLinks } from "@/components/layout/navigation";
+import { isActivePath, mainNavigation, prefetchFor } from "@/components/layout/navigation";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { localizedHref } from "@/lib/i18n/config";
 
 const PANEL_ID = "mobile-navigation-panel";
 
 export function MobileNavigation() {
   const [isOpen, setIsOpen] = useState(false);
+  const { dict } = useI18n();
 
   // Close the panel if the viewport grows to the desktop layout (xl, 1280px).
   useEffect(() => {
@@ -42,7 +45,7 @@ export function MobileNavigation() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger
-        aria-label="Open navigation menu"
+        aria-label={dict.nav.openMenu}
         className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-mnh-dark-border text-mnh-text-white transition-colors duration-200 ease-out hover:border-mnh-accent/40 hover:text-mnh-accent xl:hidden"
       >
         <Menu aria-hidden="true" size={18} />
@@ -63,9 +66,9 @@ export function MobileNavigation() {
               height={28}
               className="size-7 object-contain"
             />
-            <DialogTitle className="sr-only">Navigation menu</DialogTitle>
+            <DialogTitle className="sr-only">{dict.nav.menuTitle}</DialogTitle>
             <DialogClose
-              aria-label="Close navigation menu"
+              aria-label={dict.nav.closeMenu}
               className="inline-flex size-10 items-center justify-center rounded-full border border-mnh-dark-border text-mnh-text-white transition-colors duration-200 ease-out hover:border-mnh-accent/40 hover:text-mnh-accent"
             >
               <X aria-hidden="true" size={18} />
@@ -73,7 +76,7 @@ export function MobileNavigation() {
           </div>
 
           <nav
-            aria-label="Main navigation"
+            aria-label={dict.nav.mainLabel}
             className="flex-1 overflow-y-auto px-4 py-6 sm:px-6"
           >
             <Suspense fallback={<MobileNavLinks pathname={null} onNavigate={closeMenu} />}>
@@ -104,15 +107,17 @@ function MobileNavLinks({
   pathname,
   onNavigate,
 }: MobileNavLinksProps & { pathname: string | null }) {
+  const { dict, locale } = useI18n();
   return (
     <ul className="flex flex-col gap-1">
-      {mainNavigationLinks.map((link) => {
+      {mainNavigation.map((link) => {
         const isActive = pathname !== null && isActivePath(pathname, link.href);
 
         return (
           <li key={link.href}>
             <Link
-              href={link.href}
+              href={localizedHref(locale, link.href)}
+              prefetch={prefetchFor(link.href)}
               onClick={onNavigate}
               aria-current={isActive ? "page" : undefined}
               className={cn(
@@ -122,7 +127,7 @@ function MobileNavLinks({
                   : "text-mnh-text-muted-dark hover:bg-mnh-white/5 hover:text-mnh-text-white",
               )}
             >
-              {link.label}
+              {dict.nav.items[link.key].label}
               {isActive && (
                 <span
                   aria-hidden="true"

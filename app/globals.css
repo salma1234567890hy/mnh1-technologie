@@ -112,6 +112,8 @@
   html {
     @apply scroll-smooth font-sans;
     background: var(--background);
+    /* Anchors and keyboard focus never end up under the fixed navbar (WCAG 2.4.11). */
+    scroll-padding-top: var(--navbar-offset);
   }
 
   body {

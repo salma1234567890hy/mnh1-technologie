@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { useSiteSearch } from "@/components/search/SiteSearch";
 
 type ShortcutDisplay = "never" | "always" | "2xl";
@@ -42,13 +43,14 @@ function useIsApplePlatform() {
 export function SearchTrigger({ shortcut = "never", className }: SearchTriggerProps) {
   const { isOpen, openSearch, registerTrigger } = useSiteSearch();
   const isApple = useIsApplePlatform();
+  const { dict } = useI18n();
 
   return (
     <button
       ref={registerTrigger}
       type="button"
       onClick={openSearch}
-      aria-label="Search the site"
+      aria-label={dict.search.trigger}
       aria-haspopup="dialog"
       aria-expanded={isOpen}
       aria-keyshortcuts={isApple ? "Meta+K /" : "Control+K /"}

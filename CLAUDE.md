@@ -26,6 +26,7 @@ Toujours la lire avant de créer ou modifier un composant visuel.
 9. Le projet est dans `C:\dev\mnh-technologie` (jamais dans OneDrive).
 10. Toute page Admin doit appeler `requireAdminPage()` (`lib/admin/require-admin-page.ts`) elle-même, sous `<Suspense>` (le layout seul ne suffit pas). Les routes `/api/admin/*` gardent `requireAdmin()`.
 11. Code client : `lib/client/` et `lib/types/` ; jamais d'import d'un module `server-only`, sauf `import type`.
+12. **Aucun texte visible en dur dans les composants du site public** : tout passe par les dictionnaires `lib/i18n/dictionaries/fr.ts` (référence, le type `Dictionary` en est dérivé) et `en.ts`. Server Components : `getDictionary()` (`lib/i18n/get-dictionary.ts`) ; Client Components : `useI18n()` (`components/i18n/I18nProvider.tsx`). Liens internes : toujours `localizedHref(locale, href)` (`lib/i18n/config.ts`). L'Admin reste en français (non traduit).
 
 ## Design tokens (résumé — détail dans docs/design-spec.md)
 
@@ -79,13 +80,13 @@ PostgreSQL + `pg` (migrations SQL, rôle applicatif), `POST /api/contact`, `POST
 
 ### Frontend — FE-01 : terminé
 - Charte « Néon Subtil » en tokens (`app/globals.css`, variables shadcn alignées, contrastes AA)
-- Layouts séparés : public `app/(public)/layout.tsx` (skip link, header, footer) · Admin `app/admin/layout.tsx` (noindex) · `app/not-found.tsx`, `app/error.tsx`
+- Layouts séparés (FE-02 : deux layouts racines) : public `app/[lang]/layout.tsx` (`<html lang>`, polices, dictionnaire) + `app/[lang]/(public)/layout.tsx` (skip link, header, footer) · Admin `app/admin/layout.tsx` (`<html lang="fr">`, noindex) · 404 / erreur publiques traduites dans `app/[lang]/(public)/` (avec header et footer), Admin dans `app/admin/`
 - Composants partagés `components/shared/` : `Container`, `SectionHeader` (prop `tone`), `Reveal`, `SkipLink`
 - Client API typé `lib/client/` (`apiFetch`, fonctions par route) + types JSON `lib/types/api.ts`
 - Protection serveur de l'Admin : `getCurrentAdmin()` (`lib/auth/session.ts`), `requireAdminPage()`, redirections `/admin` ↔ `/admin/login`
 
 ### Page d'accueil et chrome
-- [x] Navbar — barre flottante arrondie (`components/layout/SiteHeader.tsx`, `MobileNavigation.tsx`, `HeaderCta.tsx`, `LanguageSwitcher.tsx`, `navigation.ts`) — hamburger sous `xl` (1280px), gap des liens 24px (xl) / 32px (2xl)
+- [x] Navbar — barre flottante arrondie (`components/layout/SiteHeader.tsx`, `MobileNavigation.tsx`, `HeaderCta.tsx`, `LanguageSwitcher.tsx`, `navigation.ts`) — hamburger sous `xl` (1280px), gap des liens 24px à toutes les largeurs ; nom « MNH TECHNOLOGIE » à côté du logo (masqué < 360px et entre 1280 et 1439px)
 - [x] Recherche — command palette ⌘K / Ctrl+K / « / » (`components/search/*`, `lib/search/*` : index par providers, extensible au blog)
 - [x] Hero — vidéo en arrière-plan (`components/home/HeroSection.tsx` serveur + `HeroVideo` / `HeroCounter` clients, `HeroReveal` en CSS pour le LCP ; vidéos dans `public/videos/`, variants partagés dans `lib/motion/variants.ts`)
 - [ ] Clients
@@ -99,15 +100,17 @@ PostgreSQL + `pg` (migrations SQL, rôle applicatif), `POST /api/contact`, `POST
 - [x] Footer — carte flottante + signature « MNH » (`components/layout/SiteFooter.tsx` serveur, îlots clients dans `components/layout/footer/`, contenu dans `footer-config.ts`, glyphes dans `lib/brand/glyphs.ts`)
 
 ## Points à valider avec l'encadrant
-- **Langue du site** : `<html lang="en">`, navigation et footer en anglais, contenu (Hero, slogan, Admin, 404) en français — choisir la langue de référence.
+- **Langues (FE-02, provisoire)** : fr + en, **français par défaut**, URL « option B » (français sans préfixe, anglais en `/en`), cookie `mnh_lang` posé par le sélecteur — tout est dans `lib/i18n/config.ts` (`DEFAULT_LOCALE`). Traductions anglaises du Hero, des services, des projets et de l'équipe à relire.
 - **Chiffres du Hero** : 3+, 25+, 100+ (ans d'expertise, clients, projets) — à confirmer.
 - **Vert texte `#3F7A1C`** (`--mnh-brand-text`) pour le texte vert sur fond clair.
 - **Rouge des erreurs** : aucun rouge dans la charte (`--destructive: #c0392b`, `red-300` / `red-400` dans le footer).
 - **Consentement aux cookies de suivi** (cookie `mnh_vid`) : `trackPageView()` existe dans `lib/client/api.ts` mais n'est branché sur aucune page en attendant.
 
 ## Notes pour les tâches à venir
+- **Multilingue (FE-02)** : structure `app/[lang]/(public)/…` ; `proxy.ts` réécrit les URL sans préfixe vers `/fr`, redirige `/fr/…` (308) et applique le cookie `mnh_lang` ; `GET /language?lang=&path=` (`app/language/route.ts`) pose le cookie et redirige (303). Une **nouvelle page publique** se crée dans `app/[lang]/(public)/<page>/page.tsx` — et son `status` passe de `"planned"` à `"live"` dans `components/layout/navigation.ts` (source unique : préchargement des liens, badge « Bientôt » de la recherche) — avec ses textes dans les deux dictionnaires et `generateMetadata` → `alternates: localizedAlternates(lang, "/<page>")` (hreflang). Le matcher du proxy exclut `/admin`, `/api`, `/_next`, `/brand`, `/videos`, `/language` et les fichiers avec extension : un nouveau dossier de `public/` doit y être ajouté.
+- **404 avec deux layouts racines (comportement de Next 16 constaté en FE-02)** : quand une page appelle `notFound()` (catch-all `[...rest]` public ou Admin), le serveur renvoie bien **404 + `noindex`**, mais un HTML minimal (`<html id="__next_error__">`) ; c'est le **navigateur** qui affiche la 404 (avec header et footer, dans la bonne langue) à partir de la charge RSC. `global-not-found` et une frontière `<Suspense>` ont été essayés sans succès (le second donne un statut 200 : à ne pas faire). À revérifier après `npm run build`.
 - **Page Contact** : le formulaire du footer enregistre l'email saisi dans `sessionStorage` (clé `mnh:prefill-email`, jamais dans l'URL) puis redirige vers `/contact`. La page Contact doit appeler `consumePrefillEmail()` de `lib/contact/prefill.ts` **après le montage** (composant client, dans un `useEffect`) pour pré-remplir son champ email ; la valeur est supprimée à la lecture. Utiliser aussi `isValidEmail()` du même module.
-- **Services** : source unique `lib/content/services.ts` (titres FR réels, libellés EN, ancres `/services#…`), utilisée par la recherche et le footer — la future page Services doit exposer ces mêmes ancres (`id="web-development"`, etc.).
+- **Services** : source unique `lib/content/services.ts` (slugs et ancres `/services#…`) ; noms et descriptions dans les dictionnaires (`dict.services[slug]`) ; utilisée par la recherche et le footer — la future page Services doit exposer ces mêmes ancres (`id="web-development"`, etc.).
 - **Coordonnées / horaires / réseaux** : `components/layout/footer/footer-config.ts`.
 
 ## Principes anti-générique (obligatoires)

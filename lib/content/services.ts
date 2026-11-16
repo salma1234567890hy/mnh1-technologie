@@ -1,47 +1,20 @@
 /**
- * MNH services — single source for the search index and the footer.
- * Titles/descriptions in French are the real texts of the current site;
- * `label` is the English name used in the (English) navigation UI.
+ * MNH services — single source of the service list (search index, footer, future /services page).
+ * Structure only: names and descriptions are in the dictionaries (dict.services[slug]);
+ * the French texts there are the real texts of the current site.
+ * `href` has no locale prefix: render it with localizedHref(locale, href).
  */
+export type ServiceSlug = "web-development" | "mobile-apps" | "artificial-intelligence" | "digital-marketing";
+
 export type Service = {
-  slug: "web-development" | "mobile-apps" | "artificial-intelligence" | "digital-marketing";
-  /** Anchor on the future /services page. */
+  slug: ServiceSlug;
+  /** Anchor on the future /services page (the page must expose id="<slug>"). */
   href: string;
-  /** English label (footer, navigation). */
-  label: string;
-  /** French title (real site content). */
-  title: string;
-  /** French short description (real site content). */
-  description: string;
 };
 
 export const services: Service[] = [
-  {
-    slug: "web-development",
-    href: "/services#web-development",
-    label: "Web Development",
-    title: "Développement Web",
-    description: "Des sites et plateformes conçus pour transformer les visiteurs en clients.",
-  },
-  {
-    slug: "mobile-apps",
-    href: "/services#mobile-apps",
-    label: "Mobile Apps",
-    title: "Applications Mobiles",
-    description: "Des applications pensées pour être utilisées, pas juste téléchargées.",
-  },
-  {
-    slug: "artificial-intelligence",
-    href: "/services#artificial-intelligence",
-    label: "Artificial Intelligence",
-    title: "Intelligence Artificielle",
-    description: "Des solutions IA concrètes pour automatiser et mieux piloter votre activité.",
-  },
-  {
-    slug: "digital-marketing",
-    href: "/services#digital-marketing",
-    label: "Digital Marketing",
-    title: "Marketing Digital",
-    description: "Des stratégies d’acquisition structurées pour des résultats mesurables.",
-  },
+  { slug: "web-development", href: "/services#web-development" },
+  { slug: "mobile-apps", href: "/services#mobile-apps" },
+  { slug: "artificial-intelligence", href: "/services#artificial-intelligence" },
+  { slug: "digital-marketing", href: "/services#digital-marketing" },
 ];

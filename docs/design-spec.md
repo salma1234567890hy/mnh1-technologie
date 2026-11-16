@@ -155,11 +155,17 @@ Lueur : ligne de 1px en bas de la barre, sur ~60 % de la largeur (centrée),
 ```
 
 - **Logo** : logo officiel (monogramme blanc, `public/brand/mnh-logo-white.png`), 36px de haut, cliquable vers `/`.
+- **Nom de la société** (ajout FE-02, décision validée) : « MNH TECHNOLOGIE » en texte à droite de l'icône, dans le **même lien** vers l'accueil, gap 10px.
+  - Space Grotesk 14px, weight 600, uppercase, tracking 0.06em ; « MNH » en `#F1F5F9`, « TECHNOLOGIE » en `#67B02E` (fond sombre) ; aucun dégradé.
+  - Affichage : **masqué < 360px** (icône seule) · **visible 360–1279px** · **masqué 1280–1439px** (place trop juste avec les 9 liens) · **visible ≥ 1440px**.
+  - Jamais de débordement ni de retour à la ligne : le lien peut rétrécir (`min-w-0`) et le nom se tronque (`truncate`) ; la liste des liens garde sa largeur naturelle.
+  - Accessibilité : texte visible `aria-hidden`, nom du lien unique « MNH Technologie — Home ».
+  - Revérifié en FE-02 T3 avec les libellés FR (≈ +40px : « Carrières », « Nous contacter »…) : environ 124px de marge à 1280px (sans le nom) et environ 33px à partir de 1440px (avec le nom) — règles inchangées. À contrôler au navigateur ; le `truncate` reste la protection si une police ou un libellé s'allonge.
 - **Liens** (9) : Home `/` · About Us `/about` · Services `/services` · Projects `/projects` · Blog `/blog` · Team `/team` · Careers `/careers` · Contact Us `/contact` · FAQ `/faq`
   - DM Sans 15px, weight 500, `#94A3B8` → hover `#F1F5F9` (200ms)
   - Lien actif (`usePathname()`) : `#4ADE80` + point rond de 4px en dessous, `aria-current="page"`
-  - Gap : **24px entre xl et 2xl**, 32px au-delà de 1536px
-- **Sélecteur de langue** : « EN » + chevron, 40px de haut ; menu déroulant sous la barre, radius 12px (prêt pour d'autres langues).
+  - Gap : **24px à toutes les largeurs desktop** (≥ xl). L'ancien 32px au-delà de 1536px est abandonné (FE-02) : la barre reste limitée à 1280px, et le nom de la société ne tiendrait plus.
+- **Sélecteur de langue** (FE-02) : « FR » / « EN » + chevron, 40px de haut ; menu déroulant sous la barre, radius 12px, options « Français » / « English » (chaque nom dans sa langue). Chaque option est un **vrai lien** vers la même page dans l'autre langue (via `/language`, qui pose le cookie `mnh_lang`) ; nom accessible « Langue : Français (FR). Changer de langue ».
 - **Recherche** : bouton loupe 40px de haut, pilule (radius 12px) avec badge « ⌘K » / « Ctrl K » en desktop — voir *Recherche dans le site* ci-dessous.
 
 ### CTA « Get In Touch »
@@ -184,7 +190,7 @@ Lueur : ligne de 1px en bas de la barre, sur ~60 % de la largeur (centrée),
 ### Compensation de hauteur
 
 - La barre flotte au-dessus du contenu (24 + 70 = 94px desktop ; 12 + 60 = 72px mobile).
-- Variable `--navbar-offset` : **110px** desktop (≥ xl) / **84px** mobile, appliquée en `padding-top` au conteneur de contenu dans `app/layout.tsx`.
+- Variable `--navbar-offset` : **110px** desktop (≥ xl) / **84px** mobile, appliquée en `padding-top` au conteneur de contenu dans `app/[lang]/(public)/layout.tsx`.
 - Une section qui gère son propre espace (ex. le Hero, padding-top 160px) peut **passer sous la barre** en ajoutant l'attribut `data-under-navbar`.
 
 ### Recherche dans le site (command palette)
@@ -352,7 +358,7 @@ Mobile : même structure, tout empilé, CTAs full-width.
   - Déclenché au scroll (`whileInView`)
 - Label :
   - Font : DM Sans, 14px, weight 400
-  - Couleur : `#64748B`
+  - Couleur : `#94A3B8` (`mnh-text-muted-dark` — texte sur fond sombre, contraste AA ; corrigé FE-02)
   - text-transform : uppercase
   - letter-spacing : 0.05em
 - Animation globale : fadeInUp, delay 0.55s, stagger 0.1s entre les 3 compteurs
@@ -374,7 +380,7 @@ Mobile : même structure, tout empilé, CTAs full-width.
 - Titre (optionnel) :
   - Texte : « Ils nous font confiance »
   - Font : DM Sans, 13px, weight 500, uppercase
-  - Couleur : `#64748B`
+  - Couleur : `#94A3B8` (`mnh-text-muted-dark` — texte sur fond sombre, contraste AA ; corrigé FE-02)
   - Letter-spacing : 0.1em
   - Text-align : center
   - Margin-bottom : 32px
@@ -907,7 +913,7 @@ Les 2 témoignages réels : L7rayfi et TCFPass (textes conservés tels quels)
   - Couleur : `#F1F5F9`
 - Type :
   - Font : DM Sans, 13px, weight 400
-  - Couleur : `#64748B`
+  - Couleur : `#94A3B8` (`mnh-text-muted-dark` — texte sur fond sombre, contraste AA ; corrigé FE-02)
 
 ### Carrousel
 
@@ -1078,7 +1084,7 @@ Les 3 articles réels du site.
 
 ## Section 11 — Footer (carte flottante + signature « MNH »)
 
-> **DÉCISION VALIDÉE** — Nouveau footer partagé par toutes les pages (`app/layout.tsx`, après le contenu). Il **remplace l'ancien footer** (4 colonnes + signature SVG à dégradés).
+> **DÉCISION VALIDÉE** — Nouveau footer partagé par toutes les pages publiques (`app/[lang]/(public)/layout.tsx`, après le contenu). Il **remplace l'ancien footer** (4 colonnes + signature SVG à dégradés).
 > Inspiration *structure et interaction* uniquement : « Chunky Typographic Footer » (bloc de métadonnées en colonnes + signature géante en lettres SVG réactives). Contenu, couleurs et glyphes 100 % MNH.
 
 ### Forme : carte flottante (cohérente avec la navbar)
@@ -1086,7 +1092,7 @@ Les 3 articles réels du site.
 - Posée sur `#0A0A0A`, marge extérieure **12px** mobile / **24px** desktop (côtés et bas)
 - Carte : fond `#141414`, bordure 1px rgba(255,255,255,0.08), radius **24px** mobile / **32px** desktop, padding **32px** / **48px**, max-width **1440px**, centrée
 - Lueur discrète : radial-gradient en bas au centre, vert brand `#67B02E` à 8 %, derrière la signature
-- Langue : interface en anglais ; devise de marque en français
+- Langue (FE-02) : interface en français ou en anglais selon la langue de la page ; la devise de marque reste **en français** dans les deux langues (`lang="fr"`)
 
 ### Partie haute : 4 colonnes de métadonnées
 
@@ -1096,7 +1102,7 @@ Les 3 articles réels du site.
 | md | 2 × 2 |
 | lg | `3fr / 4fr / 3fr / auto`, gap 32px (48px en xl) — la 4ᵉ colonne s'ajuste à l'email pour qu'il tienne sur une ligne |
 
-- Étiquettes : DM Sans 11px, 600, uppercase, tracking 0.12em, `#64748B`, margin-bottom 12px
+- Étiquettes : DM Sans 11px, 600, uppercase, tracking 0.12em, `#94A3B8` (`mnh-text-muted-dark`, corrigé FE-02), margin-bottom 12px
 - Texte : DM Sans 14px (13px mobile), `#94A3B8`, line-height 1.6, chiffres en tabular-nums
 
 **1. STUDIO** — logo (32px, lien vers `/`) · « © {année} MNH Technologie » (année via `"use cache"` + `cacheLife("days")`) · **statut en direct** (heure de Casablanca, calculé côté client après le montage) :
@@ -1131,7 +1137,7 @@ Les 3 articles réels du site.
 
 ### Ligne du bas
 
-- Gauche : « L'intelligence dans chaque ligne de code » (12px, uppercase, tracking 0.2em, `#64748B`)
+- Gauche : « L'intelligence dans chaque ligne de code » (12px, uppercase, tracking 0.2em, `#94A3B8` (`mnh-text-muted-dark`, corrigé FE-02))
 - Droite : Privacy Policy (`/privacy`) · Terms (`/terms`) · bouton « Back to top » (cercle 40px, bordure `#262626`, survol fond `#4ADE80` + icône `#0A0A0A` ; défilement doux, instantané en reduced-motion)
 
 ### Données

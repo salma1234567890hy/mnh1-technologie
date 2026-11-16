@@ -10,7 +10,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { SearchDialog } from "@/components/search/SearchDialog";
+import { createSearchIndex } from "@/lib/search/search-index";
 
 type SiteSearchContextValue = {
   isOpen: boolean;
@@ -43,6 +45,9 @@ function isEditableTarget(target: EventTarget | null) {
 export function SiteSearchProvider({ children }: { children: ReactNode }) {
   const [isOpen, setOpen] = useState(false);
   const triggersRef = useRef(new Set<HTMLButtonElement>());
+  const { dict, locale } = useI18n();
+  // One index per language (titles, descriptions and hrefs from the dictionary).
+  const index = useMemo(() => createSearchIndex(dict, locale), [dict, locale]);
 
   const openSearch = useCallback(() => setOpen(true), []);
 
@@ -105,6 +110,7 @@ export function SiteSearchProvider({ children }: { children: ReactNode }) {
         open={isOpen}
         onOpenChange={setOpen}
         getFinalFocus={getVisibleTrigger}
+        index={index}
       />
     </SiteSearchContext.Provider>
   );

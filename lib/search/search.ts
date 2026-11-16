@@ -1,10 +1,9 @@
-import { searchProviders, suggestionItems } from "@/lib/search/search-index";
 import type {
   SearchCategory,
   SearchGroup,
+  SearchIndex,
   SearchItem,
   SearchMatchRange,
-  SearchProvider,
   SearchResult,
 } from "@/lib/search/types";
 
@@ -87,35 +86,31 @@ function groupResults(results: ScoredResult[]): SearchGroup[] {
   return CATEGORY_ORDER.map((category) => {
     const groupResults = results.filter((result) => result.item.category === category);
     return {
-      label: category,
+      id: category,
       bestScore: groupResults[0]?.score ?? 0,
       results: groupResults.map(({ item, titleMatch }) => ({ item, titleMatch })),
     };
   })
     .filter((group) => group.results.length > 0)
     .sort((a, b) => b.bestScore - a.bestScore)
-    .map(({ label, results: groupItems }) => ({ label, results: groupItems }));
+    .map(({ id, results: groupItems }) => ({ id, results: groupItems }));
 }
 
 /**
- * Pure search function, independent from the UI.
+ * Pure search function, independent from the UI (the index is localized by createSearchIndex).
  * Empty query → "Suggestions" group.
  */
-export function search(
-  query: string,
-  providers: SearchProvider[] = searchProviders,
-): SearchGroup[] {
+export function search(query: string, index: SearchIndex): SearchGroup[] {
   if (!query.trim()) {
     return [
       {
-        label: "Suggestions",
-        results: suggestionItems.map((item) => ({ item, titleMatch: null })),
+        id: "Suggestions",
+        results: index.suggestions.map((item) => ({ item, titleMatch: null })),
       },
     ];
   }
 
-  const scored = providers
-    .flatMap((provider) => provider.getItems())
+  const scored = index.items
     .map((item) => scoreItem(item, query))
     .filter((result): result is ScoredResult => result !== null)
     .sort((a, b) => b.score - a.score);

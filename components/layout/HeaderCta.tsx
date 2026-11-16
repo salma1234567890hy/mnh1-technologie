@@ -1,18 +1,24 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { headerCta } from "@/components/layout/navigation";
+import { headerCta, prefetchFor } from "@/components/layout/navigation";
+import { useI18n } from "@/components/i18n/I18nProvider";
+import { localizedHref } from "@/lib/i18n/config";
 
 type HeaderCtaProps = {
   className?: string;
   onClick?: () => void;
 };
 
-/** "Get In Touch" button — 46px, radius 12px, text + ↗ arrow (navbar & mobile panel). */
+/** Header call to action (dict.nav.cta) — 46px, radius 12px, text + ↗ arrow (navbar & mobile panel). */
 export function HeaderCta({ className, onClick }: HeaderCtaProps) {
+  const { dict, locale } = useI18n();
   return (
     <Link
-      href={headerCta.href}
+      href={localizedHref(locale, headerCta.href)}
+      prefetch={prefetchFor(headerCta.href)}
       onClick={onClick}
       className={cn(
         "group/cta inline-flex h-[46px] shrink-0 items-center justify-center gap-2 rounded-xl bg-mnh-accent pr-[18px] pl-[22px] font-sans text-sm font-semibold tracking-[0.01em] whitespace-nowrap text-mnh-black",
@@ -21,7 +27,7 @@ export function HeaderCta({ className, onClick }: HeaderCtaProps) {
         className,
       )}
     >
-      {headerCta.label}
+      {dict.nav.cta.label}
       <ArrowUpRight
         aria-hidden="true"
         size={16}

@@ -5,10 +5,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { localizedHref } from "@/lib/i18n/config";
+import { useI18n } from "@/components/i18n/I18nProvider";
 import { HeaderCta } from "@/components/layout/HeaderCta";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { MobileNavigation } from "@/components/layout/MobileNavigation";
-import { isActivePath, mainNavigationLinks } from "@/components/layout/navigation";
+import { isActivePath, mainNavigation, prefetchFor } from "@/components/layout/navigation";
 import { SearchTrigger } from "@/components/search/SearchTrigger";
 import { SiteSearchProvider } from "@/components/search/SiteSearch";
 
@@ -23,6 +25,7 @@ const SCROLL_THRESHOLD = 80;
  */
 export function SiteHeader() {
   const isScrolled = useIsScrolled(SCROLL_THRESHOLD);
+  const { dict, locale } = useI18n();
 
   return (
     <SiteSearchProvider>
@@ -41,10 +44,17 @@ export function SiteHeader() {
             isScrolled ? "bg-mnh-dark-elevated/92" : "bg-mnh-dark-elevated/85",
           )}
         >
+          {/*
+            Logo + company name. The link's accessible name comes from aria-label only
+            (the visible name is aria-hidden, so it is never read twice).
+            Name visibility: hidden < 360px · shown 360–1279px · hidden 1280–1439px · shown ≥ 1440px.
+            The link may shrink (min-w-0) and the name truncates, so it can never push the bar
+            into overflowing or wrapping; the nav keeps its natural width (min-w-fit).
+          */}
           <Link
-            href="/"
-            aria-label="MNH Technologie — Home"
-            className="inline-flex shrink-0 items-center rounded-md"
+            href={localizedHref(locale, "/")}
+            aria-label={dict.common.homeLink}
+            className="inline-flex min-w-0 items-center gap-2.5 rounded-md"
           >
             <Image
               src="/brand/mnh-logo-white.png"
@@ -52,13 +62,20 @@ export function SiteHeader() {
               width={36}
               height={36}
               preload
-              className="size-7 object-contain xl:size-9"
+              className="size-7 shrink-0 object-contain xl:size-9"
             />
+            <span
+              aria-hidden="true"
+              className="hidden truncate font-heading text-sm leading-none font-semibold tracking-[0.06em] whitespace-nowrap uppercase min-[22.5rem]:block xl:hidden min-[90rem]:block"
+            >
+              <span className="text-mnh-text-white">MNH</span>{" "}
+              <span className="text-mnh-brand">Technologie</span>
+            </span>
           </Link>
 
           <nav
-            aria-label="Main navigation"
-            className="hidden min-w-0 flex-1 justify-center xl:flex"
+            aria-label={dict.nav.mainLabel}
+            className="hidden min-w-fit flex-1 justify-center xl:flex"
           >
             <Suspense fallback={<DesktopNavLinks pathname={null} />}>
               <DesktopNavLinksWithPathname />
@@ -111,15 +128,18 @@ function DesktopNavLinksWithPathname() {
 }
 
 function DesktopNavLinks({ pathname }: { pathname: string | null }) {
+  const { dict, locale } = useI18n();
   return (
-    <ul className="flex items-center gap-6 2xl:gap-8">
-      {mainNavigationLinks.map((link) => {
+    // 24px at every desktop width (no 32px at 2xl): leaves room for the company name ≥ 1440px.
+    <ul className="flex items-center gap-6">
+      {mainNavigation.map((link) => {
         const isActive = pathname !== null && isActivePath(pathname, link.href);
 
         return (
           <li key={link.href}>
             <Link
-              href={link.href}
+              href={localizedHref(locale, link.href)}
+              prefetch={prefetchFor(link.href)}
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "relative inline-flex items-center rounded-sm py-2 font-sans text-[15px] font-medium whitespace-nowrap transition-colors duration-200 ease-out",
@@ -129,7 +149,7 @@ function DesktopNavLinks({ pathname }: { pathname: string | null }) {
                   : "text-mnh-text-muted-dark after:opacity-0 hover:text-mnh-text-white",
               )}
             >
-              {link.label}
+              {dict.nav.items[link.key].label}
             </Link>
           </li>
         );

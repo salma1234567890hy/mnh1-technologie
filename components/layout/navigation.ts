@@ -1,90 +1,88 @@
-export type NavigationLink = {
-  label: string;
+import { stripLocale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionaries/fr";
+
+/**
+ * Site navigation — STRUCTURE only (keys, paths, search keywords).
+ * Visible texts (labels, descriptions) come from the dictionaries: dict.nav.items[key].
+ * Paths are WITHOUT locale prefix: render them with localizedHref(locale, href).
+ */
+
+export type NavKey = keyof Dictionary["nav"]["items"];
+
+/**
+ * "live": the page exists · "planned": not built yet (shows the public 404 "coming soon").
+ * Planned links stay visible (the spec requires the 9 navbar links) but are never prefetched,
+ * and the search marks them with a "Soon" badge. Switch to "live" when the page ships.
+ */
+export type PageStatus = "live" | "planned";
+
+export type NavigationItem = {
+  key: NavKey;
   href: string;
-  /** Short description, used by the site search. */
-  description?: string;
-  /** French + English search terms. */
-  keywords?: string[];
+  status: PageStatus;
+  /** French + English search terms (language-independent, used by the site search). */
+  keywords: string[];
 };
 
-export type Language = {
-  code: string;
-  shortLabel: string;
-  label: string;
-};
-
-export const mainNavigationLinks: NavigationLink[] = [
+export const mainNavigation: NavigationItem[] = [
+  { key: "home", status: "live", href: "/", keywords: ["accueil", "home", "homepage", "page d'accueil", "mnh"] },
   {
-    label: "Home",
-    href: "/",
-    description: "Web, mobile & AI solutions — MNH Technologie, Casablanca.",
-    keywords: ["accueil", "home", "homepage", "page d'accueil", "mnh"],
-  },
-  {
-    label: "About Us",
+    key: "about",
+    status: "planned",
     href: "/about",
-    description: "Who we are and how we work.",
     keywords: ["à propos", "a propos", "about", "agence", "agency", "entreprise", "company", "qui sommes-nous"],
   },
+  { key: "services", status: "planned", href: "/services", keywords: ["services", "offres", "offers", "solutions", "prestations"] },
   {
-    label: "Services",
-    href: "/services",
-    description: "Web development, mobile apps, AI and digital marketing.",
-    keywords: ["services", "offres", "offers", "solutions", "prestations"],
-  },
-  {
-    label: "Projects",
+    key: "projects",
+    status: "planned",
     href: "/projects",
-    description: "Selected web, mobile and AI case studies.",
     keywords: ["projets", "projects", "réalisations", "realisations", "portfolio", "études de cas", "case studies", "work"],
   },
+  { key: "blog", status: "planned", href: "/blog", keywords: ["blog", "actualités", "actualites", "news", "articles"] },
+  { key: "team", status: "planned", href: "/team", keywords: ["équipe", "equipe", "team", "membres", "members", "people"] },
   {
-    label: "Blog",
-    href: "/blog",
-    description: "News and articles from the MNH team.",
-    keywords: ["blog", "actualités", "actualites", "news", "articles"],
-  },
-  {
-    label: "Team",
-    href: "/team",
-    description: "Meet the people behind MNH Technologie.",
-    keywords: ["équipe", "equipe", "team", "membres", "members", "people"],
-  },
-  {
-    label: "Careers",
+    key: "careers",
+    status: "planned",
     href: "/careers",
-    description: "Join MNH Technologie.",
     keywords: ["carrières", "carrieres", "careers", "jobs", "emploi", "recrutement", "hiring", "stage", "internship"],
   },
   {
-    label: "Contact Us",
+    key: "contact",
+    status: "planned",
     href: "/contact",
-    description: "Talk to us about your project.",
     keywords: ["contact", "contactez-nous", "email", "téléphone", "telephone", "phone", "adresse", "address", "devis", "quote"],
   },
-  {
-    label: "FAQ",
-    href: "/faq",
-    description: "Frequently asked questions.",
-    keywords: ["faq", "questions", "aide", "help", "support"],
-  },
+  { key: "faq", status: "planned", href: "/faq", keywords: ["faq", "questions", "aide", "help", "support"] },
 ];
 
-export const headerCta: NavigationLink = {
-  label: "Get In Touch",
+/** Header call to action (texts: dict.nav.cta). */
+export const headerCta = {
   href: "/contact",
-  description: "Parlons de votre projet.",
-  keywords: ["get in touch", "contact", "projet", "project", "démarrer", "start", "devis", "quote"],
+  keywords: ["get in touch", "nous contacter", "contact", "projet", "project", "démarrer", "start", "devis", "quote"],
 };
 
-/** Ready for more languages (e.g. FR, AR) once i18n routing exists. */
-export const languages: Language[] = [
-  { code: "en", shortLabel: "EN", label: "English" },
-];
+/**
+ * Status of any internal link (no locale prefix, anchors and sub-paths allowed):
+ * "/services#ai" → status of "/services". A path that is not a navigation page
+ * (e.g. /privacy, /terms) is "planned" until it is added here.
+ */
+export function getPageStatus(href: string): PageStatus {
+  const path = stripLocale(href.split("#")[0] || "/");
+  const page = mainNavigation.find((item) =>
+    item.href === "/" ? path === "/" : path === item.href || path.startsWith(`${item.href}/`),
+  );
+  return page?.status ?? "planned";
+}
 
-export const defaultLanguage = languages[0];
+/** Next <Link> prefetch value: planned pages are never prefetched (they would 404). */
+export function prefetchFor(href: string): false | undefined {
+  return getPageStatus(href) === "planned" ? false : undefined;
+}
 
+/** Is `href` (no locale prefix) the current page? Ignores the locale prefix of `pathname`. */
 export function isActivePath(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const path = stripLocale(pathname);
+  if (href === "/") return path === "/";
+  return path === href || path.startsWith(`${href}/`);
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { prefetchFor } from "@/components/layout/navigation";
 
 type FooterLinkProps = {
   href: string;
@@ -46,7 +47,13 @@ export function FooterLink({ href, children, external, isActive, ariaLabel, clas
   }
 
   return (
-    <Link href={href} aria-label={ariaLabel} aria-current={isActive ? "page" : undefined} className={classes}>
+    <Link
+      href={href}
+      prefetch={prefetchFor(href)}
+      aria-label={ariaLabel}
+      aria-current={isActive ? "page" : undefined}
+      className={classes}
+    >
       {content}
     </Link>
   );

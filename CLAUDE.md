@@ -87,7 +87,7 @@ PostgreSQL + `pg` (migrations SQL, rôle applicatif), `POST /api/contact`, `POST
 - Protection serveur de l'Admin : `getCurrentAdmin()` (`lib/auth/session.ts`), `requireAdminPage()`, redirections `/admin` ↔ `/admin/login`
 
 ### Page d'accueil et chrome
-- [x] Navbar — barre flottante arrondie (`components/layout/SiteHeader.tsx`, `MobileNavigation.tsx`, `HeaderCta.tsx`, `LanguageSwitcher.tsx`, `navigation.ts`) — hamburger sous `xl` (1280px), gap des liens 24px à toutes les largeurs ; nom « MNH TECHNOLOGIE » à côté du logo (masqué < 360px et entre 1280 et 1439px)
+- [x] Navbar — barre flottante arrondie (`components/layout/SiteHeader.tsx`, `MobileNavigation.tsx`, `HeaderCta.tsx`, `LanguageSwitcher.tsx`, `navigation.ts`) — hamburger sous `xl` (1280px), gap des liens 20px (1280–1439px) / 24px (≥ 1440px) ; recherche en loupe ronde entre 1280 et 1439px ; nom « MNH TECHNOLOGIE » à côté du logo à partir de 360px, à toutes les largeurs
 - [x] Recherche — command palette ⌘K / Ctrl+K / « / » (`components/search/*`, `lib/search/*` : index par providers, extensible au blog)
 - [x] Hero — vidéo en arrière-plan (`components/home/HeroSection.tsx` serveur + `HeroVideo` / `HeroCounter` clients, `HeroReveal` en CSS pour le LCP ; vidéos dans `public/videos/`, variants partagés dans `lib/motion/variants.ts`)
 - [ ] Clients

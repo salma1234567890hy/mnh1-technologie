@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useSiteSearch } from "@/components/search/SiteSearch";
 
-type ShortcutDisplay = "never" | "always" | "2xl";
+/** "wide": round magnifier below 1440px, pill with the badge from 1440px (navbar, 1280–1439px space saving). */
+type ShortcutDisplay = "never" | "always" | "2xl" | "wide";
 
 type SearchTriggerProps = {
   /**
@@ -21,12 +22,14 @@ const buttonShape: Record<ShortcutDisplay, string> = {
   never: "w-10 rounded-full",
   always: "rounded-xl pr-1.5 pl-3",
   "2xl": "w-10 rounded-full 2xl:w-auto 2xl:rounded-xl 2xl:pr-1.5 2xl:pl-3",
+  wide: "w-10 rounded-full min-[90rem]:w-auto min-[90rem]:rounded-xl min-[90rem]:pr-1.5 min-[90rem]:pl-3",
 };
 
 const badgeVisibility: Record<ShortcutDisplay, string> = {
   never: "hidden",
   always: "inline-flex",
   "2xl": "hidden 2xl:inline-flex",
+  wide: "hidden min-[90rem]:inline-flex",
 };
 
 const noopSubscribe = () => () => {};

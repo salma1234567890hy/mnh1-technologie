@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { cacheLife } from "next/cache";
 import { BackToTop } from "@/components/layout/footer/BackToTop";
+import { BrandLockup } from "@/components/shared/BrandLockup";
 import { FooterLink } from "@/components/layout/footer/FooterLink";
 import { FooterPageLinks } from "@/components/layout/footer/FooterPageLinks";
 import { FooterWordmark } from "@/components/layout/footer/FooterWordmark";
@@ -48,16 +48,23 @@ export async function SiteFooter() {
 
         {/*
           ── Metadata columns ─────────────────────────────
-          lg: 3fr / 4fr / 3fr / auto — the last column ("Say hello") sizes to the email,
+          lg: 3fr / 4fr / 3fr / auto — the first column ("Studio") never gets narrower than the
+          brand lockup (icon + company name, ~179px: minmax(min-content,3fr), needed around 1024px);
+          the last column ("Say hello") sizes to the email,
           so it stays on one line without spilling into "Explore" (a 2/12 column is
           only ~150px at 1280px, the email needs ~218px).
         */}
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-[3fr_4fr_3fr_auto] xl:gap-12">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-[minmax(min-content,3fr)_4fr_3fr_auto] xl:gap-12">
           {/* 1. Studio */}
           <section aria-labelledby="footer-studio" className="min-w-0">
             <h2 id="footer-studio" className={labelClass}>{t.columns.studio}</h2>
-            <Link href={localizedHref(locale, "/")} aria-label={dict.common.homeLink} className="inline-flex rounded-md">
-              <Image src="/brand/mnh-logo-white.png" alt="" width={32} height={32} className="size-8 object-contain" />
+            {/* Icon + company name (same lockup as the navbar); the link is named once by aria-label. */}
+            <Link
+              href={localizedHref(locale, "/")}
+              aria-label={dict.common.homeLink}
+              className="inline-flex rounded-md"
+            >
+              <BrandLockup size="footer" />
             </Link>
             <p className="mt-4 tabular-nums">
               © {year} {company.displayName}

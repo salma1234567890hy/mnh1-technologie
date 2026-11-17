@@ -155,18 +155,18 @@ Lueur : ligne de 1px en bas de la barre, sur ~60 % de la largeur (centrée),
 ```
 
 - **Logo** : logo officiel (monogramme blanc, `public/brand/mnh-logo-white.png`), 36px de haut, cliquable vers `/`.
-- **Nom de la société** (ajout FE-02, décision validée) : « MNH TECHNOLOGIE » en texte à droite de l'icône, dans le **même lien** vers l'accueil, gap 10px.
+- **Nom de la société** (ajout FE-02, décision validée) : « MNH TECHNOLOGIE » en texte à droite de l'icône, dans le **même lien** vers l'accueil, gap 10px. Composant partagé `components/shared/BrandLockup.tsx` (taille `navbar`), aussi utilisé par le footer.
   - Space Grotesk 14px, weight 600, uppercase, tracking 0.06em ; « MNH » en `#F1F5F9`, « TECHNOLOGIE » en `#67B02E` (fond sombre) ; aucun dégradé.
-  - Affichage : **masqué < 360px** (icône seule) · **visible 360–1279px** · **masqué 1280–1439px** (place trop juste avec les 9 liens) · **visible ≥ 1440px**.
+  - Affichage (correction FE-02) : **masqué < 360px** (icône seule) · **visible à partir de 360px, à toutes les largeurs**, en français comme en anglais. Entre 1280 et 1439px, la place est gagnée sur la recherche (loupe ronde) et l'écart des liens (20px) — voir ci-dessous.
   - Jamais de débordement ni de retour à la ligne : le lien peut rétrécir (`min-w-0`) et le nom se tronque (`truncate`) ; la liste des liens garde sa largeur naturelle.
   - Accessibilité : texte visible `aria-hidden`, nom du lien unique « MNH Technologie — Home ».
-  - Revérifié en FE-02 T3 avec les libellés FR (≈ +40px : « Carrières », « Nous contacter »…) : environ 124px de marge à 1280px (sans le nom) et environ 33px à partir de 1440px (avec le nom) — règles inchangées. À contrôler au navigateur ; le `truncate` reste la protection si une police ou un libellé s'allonge.
+  - **Mesuré** (Chrome sans interface, polices réelles, FE-02) : nom de 137px jamais tronqué ; marge libre à 1280px : **69px en FR**, 88px en EN ; à 1366–1439px : 133px FR / 152px EN ; ≥ 1440px : 51px FR / 69px EN. Le `truncate` reste la protection si un libellé s'allonge : à remesurer après tout changement des libellés de navigation.
 - **Liens** (9) : Home `/` · About Us `/about` · Services `/services` · Projects `/projects` · Blog `/blog` · Team `/team` · Careers `/careers` · Contact Us `/contact` · FAQ `/faq`
   - DM Sans 15px, weight 500, `#94A3B8` → hover `#F1F5F9` (200ms)
   - Lien actif (`usePathname()`) : `#4ADE80` + point rond de 4px en dessous, `aria-current="page"`
-  - Gap : **24px à toutes les largeurs desktop** (≥ xl). L'ancien 32px au-delà de 1536px est abandonné (FE-02) : la barre reste limitée à 1280px, et le nom de la société ne tiendrait plus.
+  - Gap : **20px entre 1280 et 1439px**, **24px à partir de 1440px** (y compris au-delà de 1536px : l'ancien 32px est abandonné, la barre reste limitée à 1280px).
 - **Sélecteur de langue** (FE-02) : « FR » / « EN » + chevron, 40px de haut ; menu déroulant sous la barre, radius 12px, options « Français » / « English » (chaque nom dans sa langue). Chaque option est un **vrai lien** vers la même page dans l'autre langue (via `/language`, qui pose le cookie `mnh_lang`) ; nom accessible « Langue : Français (FR). Changer de langue ».
-- **Recherche** : bouton loupe 40px de haut, pilule (radius 12px) avec badge « ⌘K » / « Ctrl K » en desktop — voir *Recherche dans le site* ci-dessous.
+- **Recherche** : bouton loupe 40px de haut. **Entre 1280 et 1439px : bouton rond (loupe seule, 40px)** comme en mobile, pour laisser la place au nom ; **à partir de 1440px : pilule** (radius 12px) avec badge « ⌘K » / « Ctrl K » — voir *Recherche dans le site* ci-dessous.
 
 ### CTA « Get In Touch »
 
@@ -1100,12 +1100,12 @@ Les 3 articles réels du site.
 |---|---|
 | mobile | 1 colonne, gap 32px |
 | md | 2 × 2 |
-| lg | `3fr / 4fr / 3fr / auto`, gap 32px (48px en xl) — la 4ᵉ colonne s'ajuste à l'email pour qu'il tienne sur une ligne |
+| lg | `minmax(min-content, 3fr) / 4fr / 3fr / auto`, gap 32px (48px en xl) — la 1ʳᵉ colonne ne descend jamais sous la largeur du logo + nom (≈ 179px, utile vers 1024px) ; la 4ᵉ s'ajuste à l'email pour qu'il tienne sur une ligne |
 
 - Étiquettes : DM Sans 11px, 600, uppercase, tracking 0.12em, `#94A3B8` (`mnh-text-muted-dark`, corrigé FE-02), margin-bottom 12px
 - Texte : DM Sans 14px (13px mobile), `#94A3B8`, line-height 1.6, chiffres en tabular-nums
 
-**1. STUDIO** — logo (32px, lien vers `/`) · « © {année} MNH Technologie » (année via `"use cache"` + `cacheLife("days")`) · **statut en direct** (heure de Casablanca, calculé côté client après le montage) :
+**1. STUDIO** — logo **+ nom « MNH TECHNOLOGIE »** (composant partagé `components/shared/BrandLockup.tsx`, taille `footer` : icône 32px, nom Space Grotesk 14px 600 uppercase tracking 0.06em, « MNH » `#F1F5F9` + « TECHNOLOGIE » `#67B02E`, même rendu que la navbar, toujours visible et jamais tronqué — mesuré de 320 à 1440px, FR et EN), lien vers l'accueil nommé une seule fois (« MNH Technologie — Accueil », nom visuel `aria-hidden`) · « © {année} MNH Technologie » (année via `"use cache"` + `cacheLife("days")`) · **statut en direct** (heure de Casablanca, calculé côté client après le montage) :
 - ouvert : point `#4ADE80` pulsant + « Open now: we're building. »
 - fermé : point `#64748B` fixe + « Closed: we'll reply next business day. »
 - horaires « Mon–Fri · 9:00–18:00 » (fuseau `Africa/Casablanca`, sans pause, jours fériés non gérés)
